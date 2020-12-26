@@ -777,13 +777,19 @@ connected({timeout, {ChannelID, SentTime, SequenceNr}}, Data, S) ->
     SendTimeout = reset_send_timer(),
     {keep_state, S, [NewTimeout, SendTimeout]};
 
-connected({timeout, recv}, ping, S) ->
+connected({timeout, recv}, ping, #state{ worker = Worker } = S) ->
     %%
     %% The receive-timer was triggered.
     %%
     %% - Stop
     %%
-    {stop, timeout, S};
+    case Worker of
+        0 ->
+            ok;
+        _ ->
+            Worker ! timeout_on_ping
+    end,
+    {stop, normal, S};
 
 connected({timeout, send}, ping, S) ->
     %%
